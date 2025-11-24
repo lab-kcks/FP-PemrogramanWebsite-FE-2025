@@ -1,6 +1,8 @@
-# React + TypeScript + Vite
+# Final Project Website Programming 2025 - WordIT
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend repository for WordIT. A Website where you can play, learn, and having fun at the same time.
+
+## Vite React Plugin
 
 Currently, two official plugins are available:
 
