@@ -59,12 +59,18 @@ export default function CreateProject() {
   }, []);
 
   const handleTemplateClick = (template: GameTemplate) => {
-    if (template.slug === "quiz") {
-      navigate("/create-quiz");
-    } else {
-      toast.error(`${template.name} template is coming soon!`, {
-        duration: 3000,
-      });
+    switch (template.slug) {
+      case "speed-sorting":
+        navigate("/create-speed-sorting");
+        break;
+      case "quiz":
+        navigate("/create-quiz");
+        break;
+      default:
+        toast.error(`${template.name} template is coming soon!`, {
+          duration: 3000,
+        });
+        break;
     }
   };
 

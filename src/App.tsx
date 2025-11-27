@@ -10,6 +10,7 @@ import CreateProject from "./pages/CreateProject";
 import EditQuiz from "./pages/EditQuiz";
 import Quiz from "./pages/Quiz";
 import ProtectedRoute from "./routes/ProtectedRoutes";
+import CreateSpeedSorting from "./pages/speed-sorting/CreateSpeedSorting";
 
 function App() {
   return (
@@ -26,6 +27,10 @@ function App() {
           <Route path="/my-projects" element={<MyProjectsPage />} />
           <Route path="/create-projects" element={<CreateProject />} />
           <Route path="/create-quiz" element={<CreateQuiz />} />
+          <Route
+            path="/create-speed-sorting"
+            element={<CreateSpeedSorting />}
+          />
           <Route path="/quiz/edit/:id" element={<EditQuiz />} />
         </Route>
       </Routes>
