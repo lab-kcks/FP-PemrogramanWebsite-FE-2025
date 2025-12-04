@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import { useState, useEffect } from "react";
 import api from "@/api/axios";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -51,6 +52,7 @@ export default function HomePage() {
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = !!(token && user);
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const [games, setGames] = useState<Game[]>([]);
   const [gameTemplates, setGameTemplates] = useState<GameTemplate[]>([]);
@@ -183,9 +185,26 @@ export default function HomePage() {
     }
   };
 
+  // Helper function to detect Image Quiz
+  const isImageQuiz = (game: Game) => {
+    const templateName = game.game_template?.toLowerCase() || "";
+    if (templateName.includes("image") || templateName.includes("gambar"))
+      return true;
+
+    if (game.thumbnail_image) {
+      const normalizedPath = game.thumbnail_image.replace(/\\/g, "/");
+      if (normalizedPath.includes("/image-quiz/")) return true;
+    }
+    return false;
+  };
+
   const GameCard = ({ game }: { game: Game }) => {
     const handlePlayGame = () => {
-      window.location.href = `/quiz/play/${game.id}`;
+      if (isImageQuiz(game)) {
+        navigate(`/image-quiz/play/${game.id}`);
+      } else {
+        navigate(`/quiz/play/${game.id}`);
+      }
     };
 
     return (

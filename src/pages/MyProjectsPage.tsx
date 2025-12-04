@@ -26,13 +26,18 @@ import iconFolderLarge from "../assets/images/icon-folder-large.svg";
 import { EyeOff, Eye, Edit, Trash2, Play } from "lucide-react";
 import toast from "react-hot-toast";
 
+import { deleteQuiz } from "@/api/quiz/useDeleteQuiz";
+import { updateQuizStatus } from "@/api/quiz/useUpdateQuizStatus";
+import { deleteImageQuiz } from "@/api/image-quiz/useDeleteImageQuiz";
+import { updateImageQuiz } from "@/api/image-quiz/useUpdateImageQuiz";
+
 type Project = {
   id: string;
   name: string;
   description: string;
   thumbnail_image: string | null;
   is_published: boolean;
-  game_template: number;
+  game_template: string;
 };
 
 export default function MyProjectsPage() {
@@ -57,10 +62,52 @@ export default function MyProjectsPage() {
     fetchProjects();
   }, []);
 
-  const handleDeleteProject = async (projectId: string) => {
+  const isImageQuiz = (project: Project) => {
+    const templateName = project.game_template?.toLowerCase() || "";
+    // Check 1: Template Name (relaxed)
+    if (templateName.includes("image") || templateName.includes("gambar"))
+      return true;
+
+    // Check 2: Thumbnail Path
+    if (project.thumbnail_image) {
+      // Normalize slashes to forward slash for consistent checking
+      const normalizedPath = project.thumbnail_image.replace(/\\/g, "/");
+      if (
+        normalizedPath.includes("/image-quiz/") ||
+        normalizedPath.includes("image-quiz")
+      )
+        return true;
+    }
+    return false;
+  };
+
+  const handleDeleteProject = async (project: Project) => {
+    const performDelete = async (isImage: boolean) => {
+      if (isImage) {
+        await deleteImageQuiz(project.id);
+      } else {
+        await deleteQuiz(project.id);
+      }
+    };
+
     try {
-      await api.delete(`/api/game/game-type/quiz/${projectId}`);
-      setProjects((prev) => prev.filter((p) => p.id !== projectId));
+      const likelyImageQuiz = isImageQuiz(project);
+      try {
+        await performDelete(likelyImageQuiz);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        // Fallback mechanism: If 404, try the other endpoint
+        if (err.response && err.response.status === 404) {
+          console.log(
+            "Detection mismatch, trying fallback endpoint for delete...",
+          );
+          await performDelete(!likelyImageQuiz);
+        } else {
+          throw err;
+        }
+      }
+
+      setProjects((prev) => prev.filter((p) => p.id !== project.id));
       toast.success("Project deleted successfully!");
     } catch (err) {
       console.error("Failed to delete project:", err);
@@ -68,16 +115,35 @@ export default function MyProjectsPage() {
     }
   };
 
-  const handleUpdateStatus = async (gameId: string, isPublish: boolean) => {
-    try {
-      const form = new FormData();
-      form.append("is_publish", String(isPublish));
+  const handleUpdateStatus = async (project: Project, isPublish: boolean) => {
+    const performUpdate = async (isImage: boolean) => {
+      if (isImage) {
+        await updateImageQuiz({ game_id: project.id, is_publish: isPublish });
+      } else {
+        await updateQuizStatus(project.id, isPublish);
+      }
+    };
 
-      await api.patch(`/api/game/game-type/quiz/${gameId}`, form);
+    try {
+      const likelyImageQuiz = isImageQuiz(project);
+      try {
+        await performUpdate(likelyImageQuiz);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        // Fallback mechanism: If 404, try the other endpoint
+        if (err.response && err.response.status === 404) {
+          console.log(
+            "Detection mismatch, trying fallback endpoint for update status...",
+          );
+          await performUpdate(!likelyImageQuiz);
+        } else {
+          throw err;
+        }
+      }
 
       setProjects((prev) =>
         prev.map((p) =>
-          p.id === gameId ? { ...p, is_published: isPublish } : p,
+          p.id === project.id ? { ...p, is_published: isPublish } : p,
         ),
       );
 
@@ -155,9 +221,17 @@ export default function MyProjectsPage() {
               <div className="flex flex-col md:gap-6 justify-between items-stretch h-full w-full">
                 <div className="flex justify-between">
                   <div className="space-y-1">
-                    <Typography variant="p" className="font-semibold">
-                      {project.name}
-                    </Typography>
+                    <div className="flex items-center gap-2">
+                      <Typography variant="p" className="font-semibold">
+                        {project.name}
+                      </Typography>
+                      <Badge
+                        variant="outline"
+                        className="text-xs font-normal text-gray-500 border-gray-300"
+                      >
+                        {project.game_template}
+                      </Badge>
+                    </div>
                     <Typography
                       variant="p"
                       className="text-sm text-muted-foreground"
@@ -185,7 +259,11 @@ export default function MyProjectsPage() {
                       size="sm"
                       className="h-7"
                       onClick={() => {
-                        navigate(`/quiz/play/${project.id}`);
+                        if (isImageQuiz(project)) {
+                          navigate(`/image-quiz/play/${project.id}`);
+                        } else {
+                          navigate(`/quiz/play/${project.id}`);
+                        }
                       }}
                     >
                       <Play />
@@ -197,7 +275,11 @@ export default function MyProjectsPage() {
                     size="sm"
                     className="h-7"
                     onClick={() => {
-                      navigate(`/quiz/edit/${project.id}`);
+                      if (isImageQuiz(project)) {
+                        navigate(`/image-quiz/edit/${project.id}`);
+                      } else {
+                        navigate(`/quiz/edit/${project.id}`);
+                      }
                     }}
                   >
                     <Edit />
@@ -209,7 +291,7 @@ export default function MyProjectsPage() {
                       size="sm"
                       className="h-7"
                       onClick={() => {
-                        handleUpdateStatus(project.id, false);
+                        handleUpdateStatus(project, false);
                       }}
                     >
                       <EyeOff />
@@ -221,7 +303,7 @@ export default function MyProjectsPage() {
                       size="sm"
                       className="h-7"
                       onClick={() => {
-                        handleUpdateStatus(project.id, true);
+                        handleUpdateStatus(project, true);
                       }}
                     >
                       <Eye />
@@ -255,7 +337,7 @@ export default function MyProjectsPage() {
                         <AlertDialogAction
                           className="bg-red-600 hover:bg-red-700"
                           onClick={() => {
-                            handleDeleteProject(project.id);
+                            handleDeleteProject(project);
                           }}
                         >
                           Yes, Delete
