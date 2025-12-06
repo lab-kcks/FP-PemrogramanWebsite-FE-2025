@@ -12,6 +12,7 @@ import {
   Home,
   X,
 } from "lucide-react";
+import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -242,13 +243,22 @@ const PlayAnagram = () => {
         answerSlots.length > 0 && answerSlots.every((slot) => slot !== null);
       if (!allFilled) return;
 
-      setIsChecking(true);
-
       // Filter spaces from correct word for accurate letter count
       const correctWordNoSpaces = currentQuestion.correct_word.replace(
         /\s/g,
         "",
       );
+
+      // Strict validation: Ensure the filled slots actually match current question
+      // This prevents stale state from previous questions triggering a win
+      if (
+        answerSlots.join("").toUpperCase() !== correctWordNoSpaces.toUpperCase()
+      ) {
+        return;
+      }
+
+      setIsChecking(true);
+
       const letterCount = correctWordNoSpaces.length;
 
       // Calculate score based on whether user made mistakes
@@ -262,10 +272,17 @@ const PlayAnagram = () => {
       setCorrectAnswers((prev: number) => prev + 1);
       setShowCorrect(true);
 
-      // Mark this question as answered
       setAnsweredQuestions((prev) =>
         new Set(prev).add(currentQuestion.question_id),
       );
+
+      // Trigger Confetti
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#22c55e", "#eab308", "#3b82f6", "#ef4444"],
+      });
 
       // Auto next question
       setTimeout(() => {
@@ -277,7 +294,7 @@ const PlayAnagram = () => {
           // Game finished
           setGameFinished(true);
         }
-      }, 1500);
+      }, 800);
     };
 
     checkAnswer();
@@ -355,9 +372,9 @@ const PlayAnagram = () => {
               (l: { letter: string; used: boolean }) =>
                 l.letter === letterToRemove && l.used,
             ).length ===
-          answerSlots
-            .slice(0, slotIndex + 1)
-            .filter((s: string | null) => s === letterToRemove).length,
+            answerSlots
+              .slice(0, slotIndex + 1)
+              .filter((s: string | null) => s === letterToRemove).length,
       );
 
       if (letterIndex !== -1) {
@@ -449,6 +466,30 @@ const PlayAnagram = () => {
     }
   };
 
+  // --- FULLSCREEN LOGIC ---
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
+
   const handleExit = () => {
     if (
       window.confirm(
@@ -460,6 +501,12 @@ const PlayAnagram = () => {
   };
 
   const handlePlayAgain = () => {
+    // Reset Logic State
+    setAnswerSlots([]);
+    setAvailableLetters([]);
+    prevQuestionIndexRef.current = -1;
+
+    // Reset Game State
     setCurrentQuestionIndex(0);
     setScore(0);
     setCorrectAnswers(0);
@@ -572,11 +619,11 @@ const PlayAnagram = () => {
 
   return (
     <div
-      className={`min-h-screen ${isFullScreen ? "fixed inset-0 z-50" : "relative"} bg-gradient-to-br from-blue-50 to-pink-50 flex flex-col justify-between items-center p-6 md:p-10 transition-all`}
+      className={`min-h-screen ${isFullScreen ? "bg-white" : "relative bg-gradient-to-br from-blue-50 to-pink-50"} flex flex-col justify-between items-center p-6 md:p-10 transition-all`}
     >
       {/* Feedback Overlay */}
       {(showCorrect || showWrong) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
           <div
             className={`${showCorrect ? "bg-green-500" : "bg-red-500"} rounded-3xl p-12 shadow-2xl animate-bounce`}
           >
@@ -646,20 +693,21 @@ const PlayAnagram = () => {
           />
         </div>
 
-        {/* Slot Jawaban */}
+        {/* Slot Jawaban, rounded-full */}
         <div className="flex justify-center gap-2 mb-8 flex-wrap">
           {answerSlots.map((letter, i) => (
             <div
               key={`slot-${i}`}
               onClick={() => handleSlotClick(i)}
-              className={`w-14 h-14 rounded-lg flex items-center justify-center font-bold text-2xl transition-all ${letter
+              className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-2xl transition-all ${
+                letter
                   ? showWrong
                     ? "bg-red-500 text-white shadow-md"
                     : showCorrect
                       ? "bg-green-500 text-white shadow-md"
                       : "bg-blue-500 text-white shadow-md hover:bg-blue-600 cursor-pointer"
                   : "border-4 border-dashed border-slate-300 bg-white"
-                }`}
+              }`}
             >
               {letter || ""}
             </div>
@@ -673,10 +721,11 @@ const PlayAnagram = () => {
               key={`scramble-${i}`}
               onClick={() => handleLetterClick(i)}
               disabled={item.used || isChecking || showWrong || showCorrect}
-              className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-2xl shadow-lg transition-all ${item.used || showWrong || showCorrect
+              className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-2xl shadow-lg transition-all ${
+                item.used || showWrong || showCorrect
                   ? "bg-slate-300 text-slate-400 cursor-not-allowed opacity-50"
                   : "bg-slate-700 text-white hover:bg-slate-800 hover:scale-110 cursor-pointer active:scale-95"
-                }`}
+              }`}
             >
               {item.letter}
             </button>
@@ -734,7 +783,7 @@ const PlayAnagram = () => {
 
         {/* Fullscreen */}
         <button
-          onClick={() => setIsFullScreen(!isFullScreen)}
+          onClick={toggleFullScreen}
           disabled={showWrong || showCorrect}
           className="p-2 rounded-lg text-slate-600 hover:text-slate-800 bg-white shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
