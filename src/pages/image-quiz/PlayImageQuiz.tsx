@@ -300,6 +300,7 @@ function PlayImageQuiz() {
     setIsPaused(false);
     setActiveModal(null);
     setIsTimeUp(false);
+    setHiddenBlocks([]);
 
     const currentQ = quiz.questions[currentQuestionIndex];
 
@@ -336,7 +337,7 @@ function PlayImageQuiz() {
         console.log("Submitting Quiz");
         await submitQuiz(updatedAnswers);
       }
-    }, 1000);
+    }, 2500);
   };
   const handleExitGame = async () => {
     navigate("/my-projects");
