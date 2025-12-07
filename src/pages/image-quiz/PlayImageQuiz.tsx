@@ -21,7 +21,6 @@ import {
 
 import { useImageQuizPlayData } from "@/api/image-quiz/useImageQuizPlayData";
 import { checkImageQuizAnswer } from "@/api/image-quiz/useCheckImageQuizAnswer";
-import { updateImageQuizPlayCount } from "@/api/image-quiz/useUpdateImageQuizPlayCount";
 
 interface Answer {
   answer_id: string;
@@ -340,7 +339,6 @@ function PlayImageQuiz() {
     }, 1000);
   };
   const handleExitGame = async () => {
-    if (id) await updateImageQuizPlayCount(id);
     navigate("/my-projects");
   };
 
@@ -357,13 +355,6 @@ function PlayImageQuiz() {
 
       setResult(res);
       setCurrentScore(res.total_score);
-
-      try {
-        await updateImageQuizPlayCount(id!);
-      } catch (countErr) {
-        console.error("Failed to update play count:", countErr);
-        // Don't block the result screen for this
-      }
     } catch (err) {
       console.error(err);
       setError("Failed to submit results.");
