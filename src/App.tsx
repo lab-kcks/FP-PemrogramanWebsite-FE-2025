@@ -14,7 +14,9 @@ import ProtectedRoute from "./routes/ProtectedRoutes";
 // 📌 TAMBAHAN 1: Import Komponen Game Pair or No Pair
 import PairOrNoPairGame from "./pages/pair-or-no-pair";
 import CreatePairOrNoPair from "./pages/pair-or-no-pair/create";
-import CreateCrossword from "./pages/crosswords/CreateCrossword";
+
+import CreateCrossword from "./pages/crosswords/create";
+import PlayCrossword from "./pages/crosswords/index";
 
 function App() {
   return (
@@ -29,7 +31,7 @@ function App() {
           path="/pair-or-no-pair/play/:gameId"
           element={<PairOrNoPairGame />}
         />
-        <Route path="/create-crossword" element={<CreateCrossword />} />
+        <Route path="/crossword/play/:id" element={<PlayCrossword />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="/profile" element={<ProfilePage />} />
@@ -41,6 +43,7 @@ function App() {
             element={<CreatePairOrNoPair />}
           />
           <Route path="/create-crossword" element={<CreateCrossword />} />
+
           <Route path="/quiz/edit/:id" element={<EditQuiz />} />
         </Route>
       </Routes>
