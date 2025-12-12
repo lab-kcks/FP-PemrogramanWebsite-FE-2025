@@ -22,6 +22,7 @@ import EditMazeChase from "./pages/maze-chase/EditMazeChase";
 
 import PairOrNoPairGame from "./pages/pair-or-no-pair";
 import CreatePairOrNoPair from "./pages/pair-or-no-pair/create";
+import EditPairOrNoPair from "./pages/pair-or-no-pair/edit";
 
 import CreateSlidingPuzzle from "./pages/sliding-puzzle/CreateSlidingPuzzle";
 import EditSlidingPuzzle from "./pages/sliding-puzzle/EditSlidingPuzzle";
@@ -64,6 +65,10 @@ function App() {
           <Route path="/create-maze-chase" element={<CreateMazeChase />} />
           <Route path="/create-anagram" element={<CreateAnagram />} />
           <Route path="/quiz/edit/:id" element={<EditQuiz />} />
+          <Route
+            path="/pair-or-no-pair/edit/:id"
+            element={<EditPairOrNoPair />}
+          />
           <Route
             path="/speed-sorting/edit/:id"
             element={<EditSpeedSorting />}
