@@ -27,12 +27,10 @@ type Tile = {
 
 type GameData = {
   id: string;
-  name: string;
+  title: string;
   description: string;
   thumbnail_image: string | null;
-  game_json: {
-    tiles: { label: string }[];
-  };
+  tiles: { label: string; color: string }[];
 };
 
 function randomId() {
@@ -90,31 +88,35 @@ export default function FlipTiles() {
         const gameResponse = await api.get(
           `/api/game/game-type/flip-tiles/${id}`,
         );
-        const game = gameResponse.data.data;
+        const game = gameResponse.data.data as GameData;
         setGameData(game);
 
-        if (game.game_json && game.game_json.tiles) {
-          const palette = [
-            "bg-red-500",
-            "bg-blue-500",
-            "bg-green-500",
-            "bg-purple-500",
-            "bg-pink-500",
-            "bg-indigo-500",
-            "bg-yellow-500",
-            "bg-orange-500",
-            "bg-teal-500",
-            "bg-fuchsia-500",
-            "bg-cyan-500",
-            "bg-lime-500",
-          ];
+        const palette = [
+          "#ef4444",
+          "#3b82f6",
+          "#22c55e",
+          "#a855f7",
+          "#f97316",
+          "#eab308",
+          "#06b6d4",
+          "#f43f5e",
+          "#84cc16",
+          "#10b981",
+          "#6366f1",
+          "#0ea5e9",
+        ];
+
+        if (game.tiles && game.tiles.length) {
           setTiles(
-            game.game_json.tiles.map((t: { label: string }, idx: number) => ({
+            game.tiles.map((t, idx) => ({
               id: randomId(),
               label: t.label,
               flipped: false,
               removed: false,
-              color: palette[idx % palette.length],
+              color:
+                t.color && t.color.trim()
+                  ? t.color
+                  : palette[idx % palette.length],
             })),
           );
         }
@@ -139,35 +141,36 @@ export default function FlipTiles() {
       // Fallback: show demo tiles so page isn't stuck loading
       const demoTiles = Array.from({ length: 12 }, (_, i) => ({
         label: `Demo ${i + 1}`,
+        color: [
+          "bg-red-500",
+          "bg-blue-500",
+          "bg-green-500",
+          "bg-purple-500",
+          "bg-pink-500",
+          "bg-indigo-500",
+          "bg-yellow-500",
+          "bg-orange-500",
+          "bg-teal-500",
+          "bg-fuchsia-500",
+          "bg-cyan-500",
+          "bg-lime-500",
+        ][i % 12],
       }));
-      const palette = [
-        "bg-red-500",
-        "bg-blue-500",
-        "bg-green-500",
-        "bg-purple-500",
-        "bg-pink-500",
-        "bg-indigo-500",
-        "bg-yellow-500",
-        "bg-orange-500",
-        "bg-teal-500",
-        "bg-fuchsia-500",
-        "bg-cyan-500",
-        "bg-lime-500",
-      ];
+
       setGameData({
         id: "demo",
-        name: "Flip Tiles Demo",
+        title: "Flip Tiles Demo",
         description: "Demo mode (no game id provided).",
         thumbnail_image: null,
-        game_json: { tiles: demoTiles },
+        tiles: demoTiles,
       });
       setTiles(
-        demoTiles.map((t, idx) => ({
+        demoTiles.map((t) => ({
           id: randomId(),
           label: t.label,
           flipped: false,
           removed: false,
-          color: palette[idx % palette.length],
+          color: t.color,
         })),
       );
       setLoading(false);
@@ -328,30 +331,16 @@ export default function FlipTiles() {
   };
 
   const startAgain = () => {
-    if (!gameData?.game_json?.tiles) return;
+    if (!gameData?.tiles) return;
 
     // Re-initialize tiles from gameData
-    const palette = [
-      "bg-red-500",
-      "bg-blue-500",
-      "bg-green-500",
-      "bg-purple-500",
-      "bg-pink-500",
-      "bg-indigo-500",
-      "bg-yellow-500",
-      "bg-orange-500",
-      "bg-teal-500",
-      "bg-fuchsia-500",
-      "bg-cyan-500",
-      "bg-lime-500",
-    ];
     setTiles(
-      gameData.game_json.tiles.map((t: { label: string }, idx: number) => ({
+      gameData.tiles.map((t) => ({
         id: randomId(),
         label: t.label,
         flipped: false,
         removed: false,
-        color: palette[idx % palette.length],
+        color: t.color,
       })),
     );
     setZoomedTile(null);
@@ -580,7 +569,7 @@ export default function FlipTiles() {
             variant="h1"
             className="mb-2 border-none text-4xl font-black tracking-tight text-slate-800 drop-shadow-sm"
           >
-            {gameData.name}
+            {gameData.title}
           </Typography>
           <Typography variant="muted" className="text-lg">
             {gameData.description}
@@ -692,7 +681,7 @@ export default function FlipTiles() {
                     perspective: "1000px",
                   }}
                   onClick={() => {
-                    if (gameData.game_json.tiles.length === 0) return;
+                    if (!gameData.tiles || gameData.tiles.length === 0) return;
                     const el = cardRefs.current[tile.id];
                     if (el) {
                       const rect = el.getBoundingClientRect();
@@ -726,13 +715,17 @@ export default function FlipTiles() {
                   >
                     {/* Front Face (Label / Color) - Visible at 0deg */}
                     <div
-                      className={`absolute inset-0 w-full h-full rounded-xl flex items-center justify-center font-bold text-white shadow-md border-t border-white/30 ${tile.color} bg-gradient-to-br from-white/10 to-black/5 p-4 text-center leading-snug break-words`}
+                      className={`absolute inset-0 w-full h-full rounded-xl flex items-center justify-center font-bold text-white shadow-md border-t border-white/30 ${tile.color.startsWith("bg-") ? tile.color : ""} bg-gradient-to-br from-white/10 to-black/5 p-4 text-center leading-snug break-words`}
                       style={{
                         backfaceVisibility: "hidden", // Crucial: hide when flipped
                         WebkitBackfaceVisibility: "hidden",
                         fontSize: `clamp(0.8rem, ${tileHeight / 90}rem, 1.25rem)`,
                         textShadow: "0 2px 2px rgba(0,0,0,0.2)",
                         transform: "rotateY(0deg)", // Enforce front orientation
+                        // Support hex/rgb colors from backend
+                        backgroundColor: tile.color.startsWith("bg-")
+                          ? undefined
+                          : tile.color,
                       }}
                     >
                       {tile.label}

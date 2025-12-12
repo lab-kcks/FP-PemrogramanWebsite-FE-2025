@@ -16,6 +16,7 @@ import type { AxiosError } from "axios";
 interface Tile {
   id: string;
   label: string;
+  color: string;
 }
 
 function randomId() {
@@ -28,10 +29,25 @@ function CreateFlipTiles() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const palette = [
+    "#ef4444", // red-500
+    "#3b82f6", // blue-500
+    "#22c55e", // green-500
+    "#a855f7", // purple-500
+    "#f97316", // orange-500
+    "#eab308", // yellow-500
+    "#06b6d4", // cyan-500
+    "#f43f5e", // rose-500
+    "#84cc16", // lime-500
+    "#10b981", // emerald-500
+    "#6366f1", // indigo-500
+    "#0ea5e9", // sky-500
+  ];
+
   const [tiles, setTiles] = useState<Tile[]>([
-    { id: randomId(), label: "Tile 1" },
-    { id: randomId(), label: "Tile 2" },
-    { id: randomId(), label: "Tile 3" },
+    { id: randomId(), label: "Tile 1", color: palette[0] },
+    { id: randomId(), label: "Tile 2", color: palette[1] },
+    { id: randomId(), label: "Tile 3", color: palette[2] },
   ]);
   const [isPublished, setIsPublished] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -43,7 +59,11 @@ function CreateFlipTiles() {
   const addTile = () => {
     setTiles((prev) => [
       ...prev,
-      { id: randomId(), label: `Tile ${prev.length + 1}` },
+      {
+        id: randomId(),
+        label: `Tile ${prev.length + 1}`,
+        color: palette[prev.length % palette.length],
+      },
     ]);
   };
 
@@ -57,6 +77,10 @@ function CreateFlipTiles() {
 
   const updateTileLabel = (id: string, label: string) => {
     setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, label } : t)));
+  };
+
+  const updateTileColor = (id: string, color: string) => {
+    setTiles((prev) => prev.map((t) => (t.id === id ? { ...t, color } : t)));
   };
 
   const handleSave = async (publish: boolean) => {
@@ -81,17 +105,20 @@ function CreateFlipTiles() {
 
     try {
       const formData = new FormData();
-      formData.append("name", title);
+      formData.append("title", title);
       formData.append("description", description);
-      formData.append("thumbnail_image", thumbnail);
-      formData.append("game_template_slug", "flip-tiles");
-      formData.append("is_published", publish.toString());
+      formData.append("thumbnail", thumbnail);
 
-      // Store tiles in game_json
-      const gameJson = {
-        tiles: tiles.map((t) => ({ label: t.label })),
-      };
-      formData.append("game_json", JSON.stringify(gameJson));
+      // Send tiles as stringified JSON with color
+      formData.append(
+        "tiles",
+        JSON.stringify(
+          tiles.map((t) => ({
+            label: t.label,
+            color: t.color,
+          })),
+        ),
+      );
 
       await api.post("/api/game/game-type/flip-tiles", formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -211,6 +238,14 @@ function CreateFlipTiles() {
                     onChange={(e) => updateTileLabel(tile.id, e.target.value)}
                     placeholder={`Tile ${index + 1} label`}
                     className="flex-1"
+                  />
+                  <input
+                    type="color"
+                    value={tile.color}
+                    onChange={(e) => updateTileColor(tile.id, e.target.value)}
+                    aria-label={`Pick color for tile ${index + 1}`}
+                    className="w-10 h-10 rounded cursor-pointer border border-slate-200"
+                    title="Tile color"
                   />
                   <Button
                     size="sm"
