@@ -243,7 +243,7 @@ const FeedbackIcon = ({ type }: { type: "correct" | "wrong" | null }) => {
 const CardStack = ({
   content,
   animState,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   side: _side,
   stackCount,
 }: {
