@@ -126,6 +126,7 @@ export const GamePlay = ({
     gameStartTime.current = Date.now();
     generateRound();
   }, [generateRound]);
+  
 
   // Walking phase - show animals one by one with count
   useEffect(() => {
@@ -353,7 +354,7 @@ export const GamePlay = ({
     onUsePendant(type);
     
     switch (type) {
-      case "hint":
+      case "hint": {
         if (phase === "guessing" && playerGuesses.length < config.animalsToWatch) {
           const nextCorrectAnimal = sequenceToRemember[playerGuesses.length];
           const cardIndex = shuffledCards.indexOf(nextCorrectAnimal);
@@ -364,8 +365,8 @@ export const GamePlay = ({
           }, 2000);
         }
         break;
-        
-      case "freeze":
+      }        
+      case "freeze": {
         // Freeze timer for 5 seconds
         setIsTimeFrozen(true);
         setFrozenTimeLeft(5);
@@ -380,16 +381,19 @@ export const GamePlay = ({
           });
         }, 1000);
         break;
-        
-      case "double":
+      }
+      
+      case "double": {
         setDoublePoints(true);
-        break;
+        break; 
+      }
         
-      case "shield":
+      case "shield": {
         setHasShield(true);
-        break;
+        break; 
+      }
         
-      case "reveal":
+      case "reveal": {
         // Highlight all correct animals briefly
         if (phase === "guessing") {
           sequenceToRemember.forEach((animalId, idx) => {
@@ -408,6 +412,7 @@ export const GamePlay = ({
         }
         break;
     }
+  }
   };
 
   // Handle exit with play count increment

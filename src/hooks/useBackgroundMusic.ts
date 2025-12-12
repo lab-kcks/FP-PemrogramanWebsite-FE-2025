@@ -1,5 +1,10 @@
 import { useCallback, useRef, useEffect, useState } from "react";
 
+declare global {
+  interface Window {
+    webkitAudioContext: typeof AudioContext;
+  }
+}
 // Calming Ghibli-style background music using Web Audio API
 export const useBackgroundMusic = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -13,7 +18,7 @@ export const useBackgroundMusic = () => {
 
   const initAudio = useCallback(() => {
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       masterGainRef.current = audioContextRef.current.createGain();
       masterGainRef.current.connect(audioContextRef.current.destination);
       masterGainRef.current.gain.setValueAtTime(0, audioContextRef.current.currentTime);
