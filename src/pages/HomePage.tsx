@@ -33,6 +33,23 @@ type GameTemplate = {
   is_life_based: boolean;
 };
 
+type GameApiResponse = {
+  id: string;
+  name: string;
+  description: string;
+  thumbnail_image: string | null;
+  game_template: {
+    id: string;
+    slug: string;
+    name: string;
+  };
+  total_liked: number;
+  total_played: number;
+  creator_id: string;
+  creator_name: string;
+  is_game_liked: boolean;
+};
+
 type Game = {
   id: string;
   name: string;
@@ -107,11 +124,19 @@ export default function HomePage() {
 
         setGames(
           response.data.data.map(
-            (g: Game) =>
+            (g: GameApiResponse) =>
               ({
-                ...g,
+                id: g.id,
+                name: g.name,
+                description: g.description,
+                thumbnail_image: g.thumbnail_image,
+                game_template_name: g.game_template?.name || "",
+                game_template_slug: g.game_template?.slug || "",
                 total_liked: g.total_liked || 0,
                 total_played: g.total_played || 0,
+                creator_id: g.creator_id,
+                creator_name: g.creator_name,
+                is_game_liked: g.is_game_liked || false,
                 is_liked: g.is_game_liked || false,
               }) as Game,
           ),
@@ -186,6 +211,10 @@ export default function HomePage() {
 
   const GameCard = ({ game }: { game: Game }) => {
     const handlePlayGame = () => {
+      if (!game.game_template_slug) {
+        console.error("Game template slug is missing for game:", game);
+        return;
+      }
       window.location.href = `/${game.game_template_slug}/play/${game.id}`;
     };
 
