@@ -11,18 +11,16 @@ import {
   Timer,
   Star,
   LogOut,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 import api from "@/api/axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useImageQuizPlayData } from "@/api/image-quiz/useImageQuizPlayData";
 import { checkImageQuizAnswer } from "@/api/image-quiz/useCheckImageQuizAnswer";
+import { useImageQuizSound } from "@/hooks/useImageQuizSound";
 
 interface Answer {
   answer_id: string;
@@ -60,6 +58,7 @@ const TOTAL_BLOCKS = GRID_COLS * GRID_ROWS;
 function PlayImageQuiz() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { playSound, stopSound, toggleMute, isMuted } = useImageQuizSound();
 
   // Data State
   const {
@@ -119,6 +118,100 @@ function PlayImageQuiz() {
   // const timeTrackingRef = useRef<NodeJS.Timeout | null>(null);
   const roundStartTimeRef = useRef<number>(0);
 
+  // --- Family 100 Styles ---
+  const family100Styles = (
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700;800&family=Orbitron:wght@400;700;900&display=swap');
+
+      .font-f100 { font-family: 'Chakra Petch', sans-serif; }
+      .font-digital { font-family: 'Orbitron', monospace; }
+
+      .f100-bg {
+        background: radial-gradient(circle at center, #172554 0%, #020617 100%); /* Blue-950 to Slate-950 */
+        color: white;
+      }
+
+      .f100-panel {
+        background: linear-gradient(180deg, #1e3a8a 0%, #172554 100%);
+        border: 4px solid #3b82f6; /* Blue-500 */
+        box-shadow: 
+          0 0 0 2px #1e3a8a, /* Inner dark border */
+          0 0 20px rgba(59, 130, 246, 0.6), /* Outer Glow */
+          inset 0 0 30px rgba(0,0,0,0.5); /* Inner Depth */
+        border-radius: 1rem;
+      }
+
+      .f100-panel-glass {
+        background: rgba(30, 58, 138, 0.85);
+        backdrop-filter: blur(12px);
+        border: 2px solid rgba(96, 165, 250, 0.5);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+
+      .f100-title-text {
+        font-family: 'Chakra Petch', sans-serif;
+        font-weight: 800;
+        text-transform: uppercase;
+        background: linear-gradient(180deg, #ffffff 0%, #93c5fd 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(2px 2px 0px #1e3a8a);
+      }
+
+      .f100-btn-primary {
+        background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+        border: 3px solid #fef3c7;
+        color: #451a03;
+        font-family: 'Chakra Petch', sans-serif;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        box-shadow: 
+          0 6px 0 #92400e, 
+          0 10px 15px rgba(0,0,0,0.4);
+        transition: all 0.1s;
+      }
+      .f100-btn-primary:hover {
+        background: linear-gradient(180deg, #fcd34d 0%, #b45309 100%);
+        transform: translateY(-2px);
+        box-shadow: 
+          0 8px 0 #92400e, 
+          0 12px 20px rgba(0,0,0,0.5);
+      }
+      .f100-btn-primary:active {
+        transform: translateY(4px);
+        box-shadow: 0 2px 0 #92400e;
+      }
+
+      .f100-btn-secondary {
+        background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+        border: 3px solid #bfdbfe;
+        color: white;
+        font-family: 'Chakra Petch', sans-serif;
+        font-weight: 700;
+        box-shadow: 0 5px 0 #1e3a8a, 0 8px 15px rgba(0,0,0,0.3);
+      }
+      .f100-btn-secondary:hover {
+        background: linear-gradient(180deg, #60a5fa 0%, #1e40af 100%);
+      }
+
+      .f100-buzzer {
+        background: radial-gradient(circle at 30% 30%, #ef4444 0%, #991b1b 100%);
+        border: 4px solid #fca5a5;
+        box-shadow: 
+          0 10px 0 #7f1d1d,
+          0 0 50px rgba(220, 38, 38, 0.6),
+          inset 0 0 20px rgba(0,0,0,0.4);
+      }
+      .f100-buzzer:active {
+        transform: scale(0.95);
+        box-shadow: 
+          0 2px 0 #7f1d1d,
+          0 0 20px rgba(220, 38, 38, 0.8);
+      }
+    `}</style>
+  );
+
   // 1. Fetch Data & Init
   useEffect(() => {
     if (fetchingQuiz) {
@@ -145,7 +238,10 @@ function PlayImageQuiz() {
       setHiddenBlocks(allBlocks);
     }
 
-    return () => cleanupTimers();
+    return () => {
+      cleanupTimers();
+      stopSound("bgm");
+    };
   }, [fetchedQuizData, fetchingQuiz, fetchError]);
 
   // Effect for 3-2-1 Countdown
@@ -153,6 +249,7 @@ function PlayImageQuiz() {
     if (startCountdown === null) return;
 
     if (startCountdown > 0) {
+      playSound("tick"); // Using tick for countdown
       const timer = setTimeout(() => {
         setStartCountdown((prev) => (prev !== null ? prev - 1 : null));
       }, 1000);
@@ -169,8 +266,14 @@ function PlayImageQuiz() {
     let timer: ReturnType<typeof setInterval>;
     if (isPlaying && !isPaused && timeLeft > 0) {
       timer = setInterval(() => {
-        setTimeLeft((prev) => Math.max(0, prev - 1));
+        setTimeLeft((prev) => {
+          const next = Math.max(0, prev - 1);
+          if (next <= 10 && next > 0) playSound("tick");
+          return next;
+        });
       }, 1000);
+    } else {
+      stopSound("bgm"); // Pause BGM if game paused/stopped
     }
     return () => clearInterval(timer);
   }, [isPlaying, isPaused, timeLeft]);
@@ -200,12 +303,14 @@ function PlayImageQuiz() {
     setIsTimeUp(false);
     cleanupTimers();
     setTimeLeft(timeLimit);
+    stopSound("bgm");
   };
 
   const initiateRoundStart = () => {
     console.log("Initiating Round Start");
     if (!quiz || finished) return;
     setStartCountdown(3);
+    playSound("countdown");
   };
 
   const startActualGame = () => {
@@ -216,6 +321,7 @@ function PlayImageQuiz() {
     setIsTimeUp(false);
     setTimeLeft(timeLimit);
     roundStartTimeRef.current = Date.now();
+    playSound("bgm");
 
     if (revealTimerRef.current) clearInterval(revealTimerRef.current);
     revealTimerRef.current = setInterval(
@@ -228,6 +334,7 @@ function PlayImageQuiz() {
           const randomIndex = Math.floor(Math.random() * prev.length);
           const newBlocks = [...prev];
           newBlocks.splice(randomIndex, 1);
+          playSound("reveal");
           return newBlocks;
         });
       },
@@ -242,6 +349,8 @@ function PlayImageQuiz() {
     setIsPlaying(false);
     setIsPaused(true);
     setActiveModal("answer");
+    playSound("timeUp");
+    stopSound("bgm");
   };
 
   // -- Pause Menu Logic --
@@ -250,6 +359,7 @@ function PlayImageQuiz() {
     setIsPlaying(false);
     setIsPaused(true);
     setActiveModal("menu");
+    stopSound("bgm");
   };
 
   // -- Answer Logic --
@@ -258,6 +368,8 @@ function PlayImageQuiz() {
     setIsPlaying(false);
     setIsPaused(true);
     setActiveModal("answer");
+    playSound("buzz");
+    stopSound("bgm");
   };
 
   const handleResumeGame = () => {
@@ -268,6 +380,7 @@ function PlayImageQuiz() {
     setActiveModal(null);
     if (!finished && quiz && timeLeft > 0) {
       setIsPlaying(true);
+      playSound("bgm");
       if (revealTimerRef.current) clearInterval(revealTimerRef.current);
       revealTimerRef.current = setInterval(
         () => {
@@ -279,6 +392,7 @@ function PlayImageQuiz() {
             const randomIndex = Math.floor(Math.random() * prev.length);
             const newBlocks = [...prev];
             newBlocks.splice(randomIndex, 1);
+            playSound("reveal");
             return newBlocks;
           });
         },
@@ -320,7 +434,7 @@ function PlayImageQuiz() {
         className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none transition-opacity duration-300"
         style={{ opacity: opacity }}
       >
-        <span className="text-green-400 font-black text-lg drop-shadow-md">
+        <span className="text-yellow-400 font-black text-3xl drop-shadow-[3px_3px_0px_#000] font-digital">
           +1
         </span>
       </div>
@@ -337,6 +451,7 @@ function PlayImageQuiz() {
     setActiveModal(null);
     setIsTimeUp(false);
     setHiddenBlocks([]);
+    stopSound("bgm");
 
     const currentQ = quiz.questions[currentQuestionIndex];
 
@@ -349,6 +464,14 @@ function PlayImageQuiz() {
     const estimatedPoints = isCorrect
       ? calculatePointsFromTimeSpent(timeSpentSeconds)
       : 0;
+
+    if (isCorrect) {
+      playSound("correct");
+    } else {
+      playSound("wrong");
+    }
+
+    setCurrentScore((prev) => prev + estimatedPoints);
 
     // -- Animation Logic --
     if (isCorrect && estimatedPoints > 0) {
@@ -369,8 +492,7 @@ function PlayImageQuiz() {
       }
       setScoreParticles(particles);
 
-      // Clear particles after animation: longest particle animation is delay + appear + stay + fade
-      // (estimatedPoints - 1) * 200 + 300 (appear) + 800 (stay) + 300 (fade) = (estimatedPoints - 1) * 200 + 1400
+      // Clear particles after animation
       setTimeout(
         () => {
           setScoreParticles([]);
@@ -389,10 +511,28 @@ function PlayImageQuiz() {
     ];
     setUserAnswers(updatedAnswers);
 
+    if (isCorrect) {
+      toast.success("Correct Answer!", {
+        icon: "🎉",
+        style: {
+          borderRadius: "10px",
+          background: "#166534",
+          color: "#fff",
+        },
+      });
+    } else {
+      toast.error("Wrong Answer!", {
+        icon: "❌",
+        style: {
+          borderRadius: "10px",
+          background: "#991b1b",
+          color: "#fff",
+        },
+      });
+    }
+
     setTimeout(
       async () => {
-        setCurrentScore((prev) => prev + estimatedPoints);
-
         const isLast = currentQuestionIndex === quiz.questions.length - 1;
         if (!isLast) {
           console.log("Moving to next question");
@@ -404,10 +544,11 @@ function PlayImageQuiz() {
           await submitQuiz(updatedAnswers);
         }
       },
-      isCorrect ? 2500 : 1000,
-    ); // Faster transition if wrong
+      isCorrect ? 2500 : 1500,
+    );
   };
   const handleExitGame = async () => {
+    stopSound("bgm");
     navigate("/");
   };
 
@@ -426,6 +567,7 @@ function PlayImageQuiz() {
       setLoading(true);
       setFinished(true);
       cleanupTimers();
+      stopSound("bgm");
 
       const res = await checkImageQuizAnswer({
         game_id: id!,
@@ -461,19 +603,24 @@ function PlayImageQuiz() {
 
   if (loading || fetchingQuiz || !quiz) {
     return (
-      <div className="w-full h-screen flex justify-center items-center bg-slate-900 text-white">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-300 border-t-white"></div>
+      <div className="w-full h-screen flex justify-center items-center bg-[#020617] text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-white"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="w-full h-screen flex flex-col justify-center items-center gap-4 bg-slate-900 text-white">
-        <Typography variant="h4" className="text-red-500">
+      <div className="w-full h-screen flex flex-col justify-center items-center gap-4 bg-[#020617] text-white">
+        <Typography variant="h4" className="text-red-500 font-f100">
           {error}
         </Typography>
-        <Button onClick={() => navigate("/my-projects")}>Go Back</Button>
+        <Button
+          onClick={() => navigate("/my-projects")}
+          className="f100-btn-secondary"
+        >
+          Go Back
+        </Button>
       </div>
     );
   }
@@ -483,48 +630,65 @@ function PlayImageQuiz() {
     const percentage =
       total_questions > 0 ? (correct_count / total_questions) * 100 : 0;
 
-    // const starCount = (percentage / 100) * 5;
-    // const fullStars = Math.floor(starCount);
-    // const halfStar = starCount - fullStars >= 0.5;
-    // const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
-
     return (
-      <div className="w-full min-h-screen flex justify-center items-center bg-slate-900 p-4 text-white">
-        <div className="bg-slate-800 rounded-xl p-8 md:p-12 text-center max-w-md w-full space-y-6 shadow-xl border border-slate-700">
-          <Trophy className="mx-auto text-yellow-400" size={80} />
-          <div className="space-y-2">
-            <Typography variant="h2" className="font-bold text-3xl">
-              {percentage >= 80
-                ? "Great Job!"
-                : percentage >= 50
-                  ? "Good Effort!"
-                  : "Nice Try!"}
-            </Typography>
-            <Typography variant="p" className="text-slate-400">
-              You completed the game
-            </Typography>
+      <div className="w-full min-h-screen flex justify-center items-center f100-bg p-4 relative overflow-hidden">
+        {family100Styles}
+        {/* Background Beams/Glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/40 via-transparent to-transparent animate-pulse pointer-events-none"></div>
+
+        <div className="f100-panel p-6 md:p-8 text-center max-w-lg w-full space-y-6 relative z-10">
+          <div className="relative inline-block">
+            <Trophy
+              className="mx-auto text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.6)]"
+              size={80}
+            />
+            <div className="absolute inset-0 bg-yellow-400/30 blur-xl rounded-full"></div>
           </div>
-          <div className="bg-slate-700 p-4 rounded-lg border border-slate-600">
-            <div className="flex justify-between items-center border-b border-slate-600 pb-2 mb-2">
-              <span className="text-sm text-slate-300">Accuracy</span>
-              <span className="font-bold">{percentage.toFixed(0)}%</span>
-            </div>
-            <div className="flex justify-between items-center border-b border-slate-600 pb-2 mb-2">
-              <span className="text-sm text-slate-300">Correct Answers</span>
-              <span className="font-bold text-green-400">
-                {correct_count} / {total_questions}
+
+          <div className="space-y-2">
+            <h2 className="font-f100 font-black text-3xl uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-300 drop-shadow-md">
+              {percentage >= 80
+                ? "Survey Says... Top Score!"
+                : percentage >= 50
+                  ? "Good Answer!"
+                  : "Nice Try!"}
+            </h2>
+            <p className="text-blue-200 font-medium text-sm">
+              You completed the game!
+            </p>
+          </div>
+
+          <div className="bg-black/30 p-4 rounded-xl border-2 border-blue-500/30 backdrop-blur-sm space-y-3">
+            <div className="flex justify-between items-center border-b border-blue-500/30 pb-2">
+              <span className="text-blue-200 font-f100 uppercase tracking-widest text-xs">
+                Accuracy
+              </span>
+              <span className="font-digital text-xl font-bold text-white">
+                {percentage.toFixed(0)}%
               </span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-300">Final Score</span>
-              <span className="font-bold text-blue-400 text-xl">
+            <div className="flex justify-between items-center border-b border-blue-500/30 pb-2">
+              <span className="text-blue-200 font-f100 uppercase tracking-widest text-xs">
+                Correct
+              </span>
+              <span className="font-digital text-xl font-bold text-green-400">
+                {correct_count} <span className="text-xs text-gray-500">/</span>{" "}
+                {total_questions}
+              </span>
+            </div>
+            <div className="flex justify-between items-center pt-1">
+              <span className="text-yellow-400 font-f100 uppercase tracking-widest font-bold text-sm">
+                Final Score
+              </span>
+              <span className="font-digital text-3xl font-black text-yellow-400 drop-shadow-lg">
                 {total_score}
               </span>
             </div>
           </div>
-          <div className="space-y-3 pt-4">
+
+          <div className="space-y-3 pt-3">
             <Button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              className="w-full f100-btn-primary h-12 text-lg"
               onClick={() => {
                 setFinished(false);
                 setResult(null);
@@ -537,8 +701,7 @@ function PlayImageQuiz() {
               Play Again
             </Button>
             <Button
-              variant="outline"
-              className="w-full border-slate-600 text-slate-200 hover:bg-slate-700"
+              className="w-full f100-btn-secondary h-10 text-base"
               onClick={handleExitGame}
             >
               Exit Game
@@ -554,91 +717,110 @@ function PlayImageQuiz() {
     return <div className="text-white">Error: Question not found</div>;
 
   return (
-    <div className="w-full min-h-screen bg-slate-900 flex flex-col text-white">
-      {/* Top Bar */}
-      <div className="h-20 w-full flex justify-between items-center px-6 bg-slate-950 border-b border-slate-800 relative">
-        {/* Left: Back & Info */}
+    <div className="w-full min-h-screen f100-bg flex flex-col font-f100 overflow-hidden">
+      {family100Styles}
+
+      {/* Top Bar / Scoreboard */}
+      <div className="h-16 w-full flex justify-between items-center px-4 md:px-8 bg-gradient-to-b from-[#1e3a8a] to-[#0f172a] border-b-4 border-blue-600 shadow-xl relative z-20">
+        {/* Left: Info */}
         <div className="flex items-center gap-4 w-1/3">
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-slate-800"
+            className="text-blue-200 hover:text-white hover:bg-blue-800/50 rounded-full"
             onClick={handleExitGame}
           >
-            <ArrowLeft />
+            <ArrowLeft className="w-6 h-6" />
           </Button>
-          <div>
-            <Typography
-              variant="h4"
-              className="text-base font-bold leading-none truncate max-w-[150px]"
-            >
+          <div className="hidden md:block">
+            <h1 className="f100-title-text text-lg md:text-xl leading-none">
               {quiz.name}
-            </Typography>
-            <Typography variant="small" className="text-slate-400 text-xs">
-              Round {currentQuestionIndex + 1} / {quiz.questions.length}
-            </Typography>
+            </h1>
+            <span className="text-blue-300 text-xs font-bold tracking-widest uppercase">
+              Round {currentQuestionIndex + 1} of {quiz.questions.length}
+            </span>
           </div>
         </div>
 
-        {/* Center: Pause Button */}
-        <div className="flex justify-center w-1/3 absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2">
-          {!isPaused && isPlaying && (
-            <Button
-              size="icon"
-              className="bg-slate-700 hover:bg-slate-600 text-white w-12 h-12 rounded-full shadow-lg border border-slate-600"
-              onClick={handleOpenPauseMenu}
-              title="Pause Game"
-            >
-              <Pause className="w-6 h-6" />
-            </Button>
-          )}
-          {isPaused && (
-            <Button
-              size="icon"
-              disabled={isTimeUp}
-              className={`${isTimeUp ? "bg-gray-600 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"} text-white w-12 h-12 rounded-full shadow-lg border border-slate-600 transition-all`}
-              onClick={handleResumeGame}
-              title="Resume Game"
-            >
-              <Play className="w-6 h-6" />
-            </Button>
-          )}
+        {/* Center: Pause/Play Control (floating) */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          {/* Visual Element only - Logo Place holder or Game Show styling */}
+          <div className="hidden md:flex flex-col items-center">
+            <div className="w-24 h-1 bg-blue-500/50 rounded-full mb-1"></div>
+            <div className="w-16 h-1 bg-blue-500/30 rounded-full"></div>
+          </div>
         </div>
 
         {/* Right: Timer & Score */}
-        <div className="w-1/3 flex justify-end items-center gap-4">
-          {/* Timer Display */}
-          <div
-            className={`flex items-center gap-2 font-mono text-xl font-bold ${timeLeft <= 10 && isPlaying ? "text-red-500 animate-pulse" : "text-blue-400"}`}
+        <div className="w-1/3 flex justify-end items-center gap-2 md:gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-blue-300 hover:text-white hover:bg-blue-800/50 rounded-full mr-2"
+            onClick={toggleMute}
           >
-            <Timer size={20} />
-            <span>{formatTime(timeLeft)}</span>
+            {isMuted ? (
+              <VolumeX className="w-5 h-5" />
+            ) : (
+              <Volume2 className="w-5 h-5" />
+            )}
+          </Button>
+
+          {/* Timer */}
+          <div
+            className={`f100-panel bg-black px-3 py-1 flex items-center gap-2 min-w-[100px] justify-center ${timeLeft <= 10 && isPlaying ? "border-red-500 animate-pulse" : ""}`}
+          >
+            <Timer
+              className={`w-4 h-4 ${timeLeft <= 10 ? "text-red-500" : "text-blue-300"}`}
+            />
+            <span
+              className={`font-digital text-xl font-bold ${timeLeft <= 10 ? "text-red-500" : "text-white"}`}
+            >
+              {formatTime(timeLeft)}
+            </span>
           </div>
 
-          {/* Score Display */}
-          <div className="bg-slate-800 px-4 py-2 rounded-full border border-slate-700 flex items-center gap-2 relative">
-            <Star className="text-yellow-400 w-5 h-5 fill-yellow-400" />
-            <span className="text-xl font-bold text-white">{currentScore}</span>
+          {/* Score */}
+          <div className="f100-panel bg-black px-4 py-1 flex items-center gap-2 min-w-[90px] justify-center relative overflow-hidden group">
+            <div className="absolute inset-0 bg-yellow-500/10 group-hover:bg-yellow-500/20 transition-colors"></div>
+            <Star className="text-yellow-400 w-4 h-4 fill-yellow-400 drop-shadow-md" />
+            <span className="font-digital text-xl font-bold text-yellow-400 drop-shadow-sm">
+              {currentScore}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Game Area */}
-      <div className="flex-1 flex flex-col justify-center items-center p-4 md:p-8 relative overflow-hidden">
-        <div className="mb-6 text-center max-w-2xl z-10">
-          <Typography
-            variant="h3"
-            className="text-2xl md:text-3xl font-bold drop-shadow-lg"
-          >
-            {currentQ.question_text || "Guess the image!"}
-          </Typography>
+      {/* Main Game Area */}
+      <div className="flex-1 flex flex-col items-center justify-center p-2 md:p-4 relative">
+        {/* Pause/Play Button (Mobile/Desktop friendly position) */}
+        <div className="absolute top-4 right-4 md:hidden z-30">
+          {/* Mobile Pause - handled in top bar usually, but let's stick to layout */}
         </div>
 
-        {/* Image & Grid Container */}
-        <div
-          className="relative w-full max-w-4xl bg-black rounded-xl overflow-hidden shadow-2xl border-4 border-slate-800"
-          style={{ aspectRatio: "2/1" }}
-        >
+        {/* Question Text */}
+        <div className="w-full max-w-4xl mb-2 md:mb-4 text-center relative z-10">
+          <div className="inline-block bg-[#1e40af]/80 backdrop-blur-sm border-2 border-blue-400 px-8 py-2 rounded-2xl shadow-[0_8px_16px_rgba(0,0,0,0.3)]">
+            <Typography
+              variant="h3"
+              className="text-lg md:text-xl font-f100 font-bold text-white drop-shadow-md"
+            >
+              {currentQ.question_text || "Reveal the image and guess!"}
+            </Typography>
+          </div>
+        </div>
+
+        {/* The "Big Board" (Image Grid) */}
+        <div className="relative w-full max-w-4xl aspect-[2/1] bg-black rounded-xl overflow-hidden shadow-[0_0_40px_rgba(30,58,138,0.6)] border-8 border-slate-800 ring-4 ring-blue-600/50">
+          {/* Pause Overlay (When paused manually) */}
+          {isPaused && !isTimeUp && !activeModal && (
+            <div className="absolute inset-0 bg-black/60 z-20 backdrop-blur-sm flex items-center justify-center">
+              <h2 className="text-4xl font-black text-white uppercase tracking-widest">
+                Paused
+              </h2>
+            </div>
+          )}
+
           {/* Background Image */}
           {currentQ.question_image_url ? (
             <img
@@ -647,12 +829,12 @@ function PlayImageQuiz() {
               className="absolute inset-0 w-full h-full object-cover object-center"
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-slate-500">
-              No Image Available
+            <div className="absolute inset-0 flex items-center justify-center text-slate-500 bg-slate-900">
+              <span className="font-f100">NO IMAGE SIGNAL</span>
             </div>
           )}
 
-          {/* Overlay Grid */}
+          {/* The Grid Blocks */}
           <div
             className="absolute inset-0 grid"
             style={{
@@ -664,61 +846,97 @@ function PlayImageQuiz() {
               const particle = scoreParticles.find((p) => p.blockIndex === i);
               return (
                 <div key={i} className="relative">
+                  {/* The Cover Block */}
                   <div
-                    className={`absolute inset-0 bg-slate-800 border border-slate-900/50 ${isPlaying ? "transition-opacity duration-500" : ""} ${
-                      hiddenBlocks.includes(i) ? "opacity-100" : "opacity-0"
+                    className={`absolute inset-0 bg-gradient-to-br from-blue-700 to-blue-900 border border-blue-950 ${isPlaying ? "transition-transform duration-500 ease-in-out" : ""} ${
+                      hiddenBlocks.includes(i)
+                        ? "opacity-100 scale-100"
+                        : "opacity-0 scale-0"
                     }`}
-                  />
+                  >
+                    {/* Optional: Add numbers to blocks like Family Feud? Maybe too messy for 16x8. 
+                         Let's just keep them as blue panels with a slight 3D feel */}
+                    <div className="absolute inset-[1px] border border-blue-500/30 opacity-50"></div>
+                  </div>
+
                   {particle && (
                     <ScoreParticle delay={particle.delay} blockIndex={i} />
-                  )}{" "}
+                  )}
                 </div>
               );
             })}
           </div>
 
-          {/* Start Button Overlay */}
+          {/* Start Round Overlay */}
           {!isPlaying &&
             hiddenBlocks.length === TOTAL_BLOCKS &&
             !isPaused &&
             startCountdown === null && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-20 backdrop-blur-sm">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-20 backdrop-blur-sm">
                 <Button
-                  size="lg"
-                  className="text-xl px-10 py-8 rounded-full bg-blue-600 hover:bg-blue-700 border-none shadow-2xl hover:scale-105 transition-transform"
                   onClick={initiateRoundStart}
+                  className="f100-btn-primary text-2xl py-8 px-12 rounded-full h-auto animate-bounce shadow-[0_0_30px_rgba(251,191,36,0.5)]"
                 >
-                  <Play fill="currentColor" className="mr-2 w-6 h-6" /> START
-                  ROUND
+                  START ROUND
                 </Button>
               </div>
             )}
 
-          {/* Countdown Overlay */}
+          {/* 3-2-1 Countdown Overlay */}
           {startCountdown !== null && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-30 backdrop-blur-sm">
-              <div className="text-9xl font-black text-white animate-pulse">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-30 backdrop-blur-sm">
+              <div className="text-[12rem] font-digital font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.8)] animate-pulse">
                 {startCountdown === 0 ? "GO!" : startCountdown}
               </div>
             </div>
           )}
         </div>
 
-        {/* Submit Answer Button (Bottom) */}
-        <div className="mt-4 flex gap-4 z-10 h-24 items-center justify-center">
-          {isPlaying && (
-            <button
-              className="relative w-24 h-24 rounded-full bg-red-600 border-4 border-red-800 shadow-[0_8px_0_#7f1d1d,0_15px_20px_rgba(220,38,38,0.5)] active:shadow-none active:translate-y-2 transition-all duration-100 ease-in-out flex items-center justify-center animate-pulse hover:animate-none group"
-              onClick={handleOpenAnswerModal}
-              aria-label="Submit Answer"
+        {/* Bottom Controls / Buzzer */}
+        <div className="mt-4 md:mt-6 flex gap-8 z-10 items-center justify-center w-full">
+          {/* Pause Button (Desktop) */}
+          <div className="hidden md:block">
+            <Button
+              variant="outline"
+              size="icon"
+              className="w-14 h-14 rounded-full border-2 border-blue-400 bg-blue-900/50 text-blue-200 hover:bg-blue-800 hover:text-white"
+              onClick={
+                isPlaying && !isPaused ? handleOpenPauseMenu : handleResumeGame
+              }
+              disabled={!isPlaying && !isPaused}
             >
-              <span className="font-black text-white/90 text-xl tracking-wider drop-shadow-md z-10">
+              {isPaused ? (
+                <Play className="w-6 h-6 ml-1" />
+              ) : (
+                <Pause className="w-6 h-6" />
+              )}
+            </Button>
+          </div>
+
+          {/* BIG RED BUZZER */}
+          <div className="relative group">
+            {isPlaying && (
+              <div className="absolute inset-0 bg-red-500/30 rounded-full blur-xl animate-pulse group-hover:bg-red-500/50 transition-all"></div>
+            )}
+            <button
+              disabled={!isPlaying || isPaused}
+              className={`
+                  relative w-24 h-24 md:w-28 md:h-28 rounded-full f100-buzzer transition-all duration-150 ease-out
+                  flex items-center justify-center
+                  ${!isPlaying || isPaused ? "opacity-50 cursor-not-allowed grayscale" : "cursor-pointer hover:scale-105 active:scale-95"}
+                `}
+              onClick={handleOpenAnswerModal}
+            >
+              <span className="font-f100 font-black text-white text-xl md:text-2xl tracking-widest drop-shadow-md z-10 pointer-events-none">
                 BUZZ
               </span>
-              {/* Shine/Reflection */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-8 bg-gradient-to-b from-white/30 to-transparent rounded-full blur-[0.5px]" />
+              {/* Shine effect */}
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-10 bg-gradient-to-b from-white/40 to-transparent rounded-full blur-[1px] pointer-events-none" />
             </button>
-          )}
+          </div>
+
+          {/* Spacer for symmetry on desktop */}
+          <div className="hidden md:block w-14"></div>
         </div>
       </div>
 
@@ -726,15 +944,13 @@ function PlayImageQuiz() {
       <Dialog
         open={isPaused && activeModal !== null}
         onOpenChange={(open) => {
-          // If modal is being closed manually (e.g. by clicking outside),
-          // and it's not the time-up forced answer modal, then resume.
           if (!open && activeModal !== "answer" && !isTimeUp) {
             handleResumeGame();
           }
         }}
       >
         <DialogContent
-          className="sm:max-w-lg bg-white text-black border-none p-6 rounded-xl backdrop-blur-md"
+          className="sm:max-w-2xl bg-[#0f172a] border-4 border-blue-500 rounded-2xl shadow-[0_0_50px_rgba(30,58,138,0.8)] p-0 overflow-hidden"
           onInteractOutside={(e) => {
             if (activeModal === "answer" || isTimeUp) e.preventDefault();
           }}
@@ -742,32 +958,45 @@ function PlayImageQuiz() {
             if (activeModal === "answer" || isTimeUp) e.preventDefault();
           }}
         >
-          {/* MENU PAUSE */}
-          {activeModal === "menu" && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-3xl font-bold text-center mb-2">
-                  Game Paused
-                </DialogTitle>
-                <Typography
-                  variant="p"
-                  className="text-center text-gray-500 mb-4"
-                >
-                  Timer is stopped.
-                </Typography>
-              </DialogHeader>
-              <div className="flex flex-col gap-3 mt-4">
+          {/* Header Bar */}
+          <div className="bg-blue-800 p-4 border-b-2 border-blue-500 flex items-center justify-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/20 to-transparent animate-pulse"></div>
+            <DialogTitle className="text-3xl font-f100 font-bold text-white uppercase tracking-widest drop-shadow-md relative z-10">
+              {activeModal === "menu"
+                ? "Game Paused"
+                : isTimeUp
+                  ? "Time's Up!"
+                  : "Who is it?"}
+            </DialogTitle>
+          </div>
+
+          <div className="p-8 relative">
+            {/* Background pattern */}
+            <div
+              className="absolute inset-0 opacity-10"
+              style={{
+                backgroundImage:
+                  "radial-gradient(#3b82f6 1px, transparent 1px)",
+                backgroundSize: "20px 20px",
+              }}
+            ></div>
+
+            {/* MENU PAUSE */}
+            {activeModal === "menu" && (
+              <div className="flex flex-col gap-4 relative z-10">
+                <p className="text-center text-blue-200 text-lg mb-4 font-f100">
+                  The clock is stopped. Ready to continue?
+                </p>
                 <Button
-                  size="lg"
-                  className="bg-green-600 hover:bg-green-700 text-white text-lg"
+                  className="f100-btn-primary text-xl py-6"
                   onClick={handleResumeGame}
                 >
-                  <Play className="mr-2 w-5 h-5" /> Resume Game
+                  <Play className="mr-2 w-6 h-6" /> Resume Game
                 </Button>
+                <div className="h-px bg-blue-800/50 my-2"></div>
                 <Button
-                  size="lg"
-                  variant="outline"
-                  className="text-red-500 border-red-200 hover:bg-red-50 text-lg"
+                  variant="ghost"
+                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20 font-f100"
                   onClick={() => {
                     setFinished(false);
                     setResult(null);
@@ -777,54 +1006,52 @@ function PlayImageQuiz() {
                     resetGrid();
                   }}
                 >
-                  <ArrowLeft className="mr-2 w-5 h-5" /> Restart Game
+                  <ArrowLeft className="mr-2 w-4 h-4" /> Restart Round
                 </Button>
-                <Button variant="ghost" onClick={handleExitGame}>
-                  <LogOut className="mr-2 w-4 h-4" /> Exit
-                </Button>
-              </div>
-            </>
-          )}
-
-          {/* ANSWER MODAL */}
-          {activeModal === "answer" && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-3xl font-bold text-center mb-2">
-                  {isTimeUp ? (
-                    <span className="text-red-600">Time's Up!</span>
-                  ) : (
-                    "Choose Answer"
-                  )}
-                </DialogTitle>
-                <Typography
-                  variant="p"
-                  className="text-center text-gray-500 mb-4"
+                <Button
+                  variant="ghost"
+                  className="text-gray-400 hover:text-white font-f100"
+                  onClick={handleExitGame}
                 >
-                  {isTimeUp
-                    ? "You ran out of time! Select an answer to continue."
-                    : "Time is paused. Choose carefully!"}
-                </Typography>
-              </DialogHeader>
-
-              <div className="grid gap-4 mt-2">
-                {currentQ.answers.map((ans, idx) => (
-                  <Button
-                    key={idx}
-                    variant="outline"
-                    className="h-auto py-6 px-6 text-xl justify-start border-2 border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all text-left rounded-xl"
-                    onClick={() => handleAnswerSelect(ans.answer_id)}
-                  >
-                    <span className="bg-slate-100 text-slate-600 font-bold rounded-lg w-10 h-10 flex-shrink-0 flex items-center justify-center mr-4 text-lg">
-                      {String.fromCharCode(65 + idx)}
-                    </span>
-                    <span className="font-medium">{ans.answer_text}</span>
-                  </Button>
-                ))}
+                  <LogOut className="mr-2 w-4 h-4" /> Exit to Menu
+                </Button>
               </div>
-              {/* No "Cancel & Resume" button here as per user request */}
-            </>
-          )}
+            )}
+
+            {/* ANSWER MODAL */}
+            {activeModal === "answer" && (
+              <div className="relative z-10">
+                <p className="text-center text-blue-200 mb-6 font-f100 text-lg">
+                  {isTimeUp
+                    ? "You're out of time! Select an answer to see if you can still get points."
+                    : "Select the correct answer from the board below!"}
+                </p>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {currentQ.answers.map((ans, idx) => (
+                    <button
+                      key={idx}
+                      className="group relative overflow-hidden bg-gradient-to-r from-blue-900 to-blue-950 border-2 border-blue-500 hover:border-yellow-400 rounded-xl p-4 transition-all duration-200 hover:shadow-[0_0_20px_rgba(250,204,21,0.3)] hover:-translate-y-1 text-left flex items-center"
+                      onClick={() => handleAnswerSelect(ans.answer_id)}
+                    >
+                      {/* Option Letter Box */}
+                      <div className="bg-blue-800 border border-blue-400 text-white font-digital font-bold w-12 h-12 flex items-center justify-center rounded-lg text-xl mr-4 group-hover:bg-yellow-500 group-hover:text-black transition-colors shadow-inner">
+                        {String.fromCharCode(65 + idx)}
+                      </div>
+
+                      {/* Text */}
+                      <span className="text-white font-f100 font-bold text-xl group-hover:text-yellow-400 transition-colors">
+                        {ans.answer_text}
+                      </span>
+
+                      {/* Hover Shine */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
