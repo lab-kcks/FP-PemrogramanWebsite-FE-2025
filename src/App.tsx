@@ -22,6 +22,8 @@ import EditMazeChase from "./pages/maze-chase/EditMazeChase";
 // 📌 TAMBAHAN 1: Import Komponen Game Pair or No Pair
 import PairOrNoPairGame from "./pages/pair-or-no-pair";
 import CreatePairOrNoPair from "./pages/pair-or-no-pair/create";
+import HangmanGame from "./pages/hangman";
+import CreateHangmanTemplate from "./pages/hangman/create";
 import EditPairOrNoPair from "./pages/pair-or-no-pair/edit";
 
 import CreateSlidingPuzzle from "./pages/sliding-puzzle/CreateSlidingPuzzle";
@@ -51,6 +53,7 @@ function App() {
         <Route path="/flip-tiles/play/:id" element={<FlipTiles />} />
         <Route path="/speed-sorting/play/:id" element={<SpeedSorting />} />
         <Route path="/anagram/play/:id" element={<PlayAnagram />} />
+        <Route path="/hangman/play/:id" element={<HangmanGame />} />
         <Route
           path="/pair-or-no-pair/play/:gameId"
           element={<PairOrNoPairGame />}
@@ -80,6 +83,8 @@ function App() {
             path="/create-pair-or-no-pair"
             element={<CreatePairOrNoPair />}
           />
+          <Route path="/create-hangman" element={<CreateHangmanTemplate />} />
+          <Route path="/hangman/edit/:id" element={<CreateHangmanTemplate />} />
           <Route path="/create-whack-a-mole" element={<CreateWhackAMole />} />
           <Route path="/whack-a-mole/edit/:id" element={<EditWhackAMole />} />
           <Route path="/create-maze-chase" element={<CreateMazeChase />} />
