@@ -11,6 +11,7 @@ import EditQuiz from "./pages/EditQuiz";
 import Quiz from "./pages/Quiz";
 import MatchUpPlay from "./pages/match-up/MatchUpPlay";
 import MatchUpList from "./pages/match-up/MatchUpList";
+import MatchUpCreate from "./pages/match-up/MatchUpCreate";
 import ProtectedRoute from "./routes/ProtectedRoutes";
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
           <Route path="/my-projects" element={<MyProjectsPage />} />
           <Route path="/create-projects" element={<CreateProject />} />
           <Route path="/create-quiz" element={<CreateQuiz />} />
+          <Route path="/match-up/create" element={<MatchUpCreate />} />
           <Route path="/quiz/edit/:id" element={<EditQuiz />} />
         </Route>
       </Routes>
