@@ -130,6 +130,15 @@ export const useGameAudio = ({
         interfaceNightmareRef.current.currentTime = 0;
       }
 
+      // Stop other game music
+      const otherGameAudio = isNightmareMode
+        ? normalAudioRef.current
+        : nightmareAudioRef.current;
+      if (otherGameAudio) {
+        otherGameAudio.pause();
+        otherGameAudio.currentTime = 0;
+      }
+
       // Start game music immediately without checking paused state
       if (gameAudio) {
         gameAudio.currentTime = 0; // Reset to start
@@ -151,20 +160,32 @@ export const useGameAudio = ({
         ? interfaceNormalRef.current
         : interfaceNightmareRef.current;
 
+      // Stop all game music
+      if (normalAudioRef.current) {
+        normalAudioRef.current.pause();
+        normalAudioRef.current.currentTime = 0;
+      }
+      if (nightmareAudioRef.current) {
+        nightmareAudioRef.current.pause();
+        nightmareAudioRef.current.currentTime = 0;
+      }
+
       // Stop other interface music when switching modes
-      if (otherInterface && !otherInterface.paused) {
+      if (otherInterface) {
         otherInterface.pause();
         otherInterface.currentTime = 0;
       }
 
-      // Play current interface music when switching modes
+      // Play current interface music
       if (currentInterface) {
-        currentInterface.pause();
         currentInterface.currentTime = 0;
         currentInterface.volume = 0.3;
-        currentInterface.play().catch(() => {
-          // Silent fail - autoplay might be blocked by browser
-        });
+        const playPromise = currentInterface.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Silent fail - autoplay might be blocked by browser
+          });
+        }
       }
     }
   }, [isNightmareMode, isAudioReady, isOnHomeScreen, isPlaying]); // Remove isMuted from dependencies
@@ -181,7 +202,7 @@ export const useGameAudio = ({
       : nightmareAudioRef.current;
 
     // Stop other audio
-    if (otherAudio && !otherAudio.paused) {
+    if (otherAudio) {
       otherAudio.pause();
       otherAudio.currentTime = 0;
     }
@@ -189,6 +210,7 @@ export const useGameAudio = ({
     // Play current audio
     if (currentAudio && !isPaused) {
       if (currentAudio.paused) {
+        currentAudio.currentTime = 0; // Reset to start
         currentAudio.volume = 0.3;
         currentAudio.play().catch(() => {
           // Silent fail - autoplay might be blocked by browser
