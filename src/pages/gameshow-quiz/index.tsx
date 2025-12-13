@@ -129,7 +129,7 @@ const GameshowQuizListPage = () => {
           {/* Action Bar */}
           <div className="flex justify-end mb-6">
             <Button
-              onClick={() => navigate("/gameshow-quiz/create")}
+              onClick={() => navigate("/create-gameshow-quiz")}
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -161,16 +161,10 @@ const GameshowQuizListPage = () => {
           {/* Empty State */}
           {!loading && !error && games.length === 0 && (
             <div className="text-center py-20">
-              <Typography className="text-slate-500 mb-4">
-                Belum ada game. Buat game pertamamu!
+              <Typography className="text-slate-500">
+                Belum ada game. Klik &quot;Buat Game Baru&quot; untuk membuat
+                game pertamamu!
               </Typography>
-              <Button
-                onClick={() => navigate("/gameshow-quiz/create")}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Buat Game Baru
-              </Button>
             </div>
           )}
 

@@ -60,6 +60,6 @@ export interface CreateGameshowPayload {
 
 export interface CheckAnswerPayload {
   questionId: string;
-  optionId: string;
+  selectedOptionId: string;
   timeTaken?: number;
 }

@@ -116,11 +116,11 @@ const GamePlayer = ({ game, onBack }: GamePlayerProps) => {
     try {
       const res = await checkAnswer(game.id, {
         questionId: question.id,
-        optionId,
+        selectedOptionId: optionId,
       });
 
-      const isCorrect = res?.correct ?? false;
-      const earnedPoints = isCorrect ? question.points : 0;
+      const isCorrect = res?.isCorrect ?? false;
+      const earnedPoints = res?.score ?? 0;
 
       if (isCorrect) {
         setScore((s) => s + earnedPoints);
