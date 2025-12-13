@@ -576,6 +576,7 @@ function PlayImageQuiz() {
 
       setResult(res);
       setCurrentScore(res.total_score);
+      playSound("result");
 
       // Fetch updated user data and update the store
       await fetchAndUpdateUser();

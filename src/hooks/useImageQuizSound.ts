@@ -8,7 +8,8 @@ type SoundType =
   | "tick"
   | "reveal"
   | "timeUp"
-  | "countdown";
+  | "countdown"
+  | "result";
 
 // Map sound types to file paths
 // You should place these files in your public/sounds directory
@@ -21,6 +22,7 @@ const SOUND_PATHS: Record<SoundType, string> = {
   reveal: "/sounds/flip.mp3",
   timeUp: "/sounds/time-up.mp3",
   countdown: "/sounds/countdown.mp3",
+  result: "/sounds/result.mp3",
 };
 
 export const useImageQuizSound = () => {
