@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
 
-const Timer = ({ seconds, onEnd }: { seconds: number; onEnd: () => void }) => {
+interface TimerProps {
+  seconds: number;
+  onEnd: () => void;
+  resetKey?: number | string;
+}
+
+const Timer = ({ seconds, onEnd, resetKey }: TimerProps) => {
   const [time, setTime] = useState(seconds);
+
+  useEffect(() => {
+    setTime(seconds);
+  }, [seconds, resetKey]);
 
   useEffect(() => {
     if (time <= 0) {
@@ -10,7 +20,7 @@ const Timer = ({ seconds, onEnd }: { seconds: number; onEnd: () => void }) => {
     }
     const t = setTimeout(() => setTime(time - 1), 1000);
     return () => clearTimeout(t);
-  }, [time]);
+  }, [time, onEnd]);
 
   return <div className="text-xl">⏱ {time}s</div>;
 };

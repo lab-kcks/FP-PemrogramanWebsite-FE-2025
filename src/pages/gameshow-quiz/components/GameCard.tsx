@@ -1,15 +1,39 @@
-import { useNavigate } from "react-router-dom";
+interface GameData {
+  id: string;
+  name?: string;
+  title?: string;
+  description?: string;
+}
 
-const GameCard = ({ game }: any) => {
-  const navigate = useNavigate();
+interface GameCardProps {
+  game: GameData;
+  onPlay?: () => void;
+  onEdit?: () => void;
+}
 
+const GameCard = ({ game, onPlay, onEdit }: GameCardProps) => {
   return (
-    <div
-      className="border p-4 rounded cursor-pointer"
-      onClick={() => navigate(`/gameshow-quiz/play/${game.id}`)}
-    >
-      <h3 className="font-bold">{game.name}</h3>
-      <p>{game.description}</p>
+    <div className="border p-4 rounded">
+      <h3 className="font-bold">{game.name || game.title}</h3>
+      <p className="text-sm text-gray-600 mb-3">{game.description}</p>
+      <div className="flex gap-2">
+        {onPlay && (
+          <button
+            onClick={onPlay}
+            className="px-3 py-1 bg-green-600 text-white rounded text-sm"
+          >
+            Play
+          </button>
+        )}
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="px-3 py-1 bg-blue-600 text-white rounded text-sm"
+          >
+            Edit
+          </button>
+        )}
+      </div>
     </div>
   );
 };

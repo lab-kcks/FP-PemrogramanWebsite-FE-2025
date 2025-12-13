@@ -1,14 +1,40 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { v4 as uuid } from "uuid";
 import QuestionEditor from "./QuestionEditor";
 import { useGameshowQuiz } from "../hooks/useGameshowQuiz";
+import type { GameshowQuestion } from "@/api/gameshow-quiz/types";
 
-const CreateGameshowForm = ({ onSuccess }: { onSuccess: () => void }) => {
-  const { createGame, loading } = useGameshowQuiz();
+interface GameInitialData {
+  name?: string;
+  title?: string;
+  description?: string;
+  questions?: GameshowQuestion[];
+}
+
+interface CreateGameshowFormProps {
+  onSuccess: (gameId?: string) => void;
+  initialData?: GameInitialData;
+  gameId?: string;
+}
+
+const CreateGameshowForm = ({
+  onSuccess,
+  initialData,
+  gameId,
+}: CreateGameshowFormProps) => {
+  const { createGame, updateGame, loading } = useGameshowQuiz();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [questions, setQuestions] = useState<any[]>([]);
+  const [questions, setQuestions] = useState<GameshowQuestion[]>([]);
+
+  useEffect(() => {
+    if (initialData) {
+      setName(initialData.name || initialData.title || "");
+      setDescription(initialData.description || "");
+      setQuestions(initialData.questions || []);
+    }
+  }, [initialData]);
 
   const addQuestion = () => {
     if (questions.length >= 10) return;
@@ -30,7 +56,7 @@ const CreateGameshowForm = ({ onSuccess }: { onSuccess: () => void }) => {
       return;
     }
 
-    await createGame({
+    const payload = {
       name,
       description,
       score_per_question: 10,
@@ -38,9 +64,15 @@ const CreateGameshowForm = ({ onSuccess }: { onSuccess: () => void }) => {
       is_question_randomized: false,
       is_answer_randomized: false,
       questions,
-    });
+    };
 
-    onSuccess();
+    if (gameId) {
+      await updateGame(gameId, payload);
+      onSuccess(gameId);
+    } else {
+      const result = await createGame(payload);
+      onSuccess(result?.id);
+    }
   };
 
   return (
@@ -66,7 +98,7 @@ const CreateGameshowForm = ({ onSuccess }: { onSuccess: () => void }) => {
           question={q}
           onChange={(updated) =>
             setQuestions((prev) =>
-              prev.map((x, idx) => (idx === i ? updated : x))
+              prev.map((x, idx) => (idx === i ? updated : x)),
             )
           }
         />
@@ -77,7 +109,7 @@ const CreateGameshowForm = ({ onSuccess }: { onSuccess: () => void }) => {
       </button>
 
       <button onClick={submit} disabled={loading} className="btn-primary">
-        Simpan Gameshow
+        {gameId ? "Update Gameshow" : "Simpan Gameshow"}
       </button>
     </div>
   );

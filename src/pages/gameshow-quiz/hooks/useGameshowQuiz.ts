@@ -1,48 +1,78 @@
-import { useState } from 'react';
-import { GameshowQuizAPI } from '@/api/gameshow-quiz/gameshow-quiz.api';
+import { useState } from "react";
+import { GameshowQuizAPI } from "@/api/gameshow-quiz/gameshow-quiz.api";
 import type {
-    CreateGameshowPayload,
-    CheckAnswerPayload,
-} from '../gameshow';
+  CreateGameshowPayload,
+  CheckAnswerPayload,
+} from "@/api/gameshow-quiz/types";
 
 export const useGameshowQuiz = () => {
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    
-    const exec = async <T>(fn: () => Promise<T>) => {
-        try {
-            setLoading(true);
-            setError(null);
-            return await fn();
-        } catch (err: any) {
-            setError(err.response?.data?.error || err.message);
-            throw err;
-        } finally {
-            setLoading(false);
-        }
-    };
+  const exec = async <T>(fn: () => Promise<T>): Promise<T> => {
+    try {
+      setLoading(true);
+      setError(null);
+      return await fn();
+    } catch (err: unknown) {
+      const error = err as {
+        response?: { data?: { error?: string } };
+        message?: string;
+      };
+      setError(error.response?.data?.error || error.message || "Unknown error");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return {
-        loading,
-        error,
+  const listGames = async () => {
+    const res = await exec(() => GameshowQuizAPI.list());
+    return res.data?.data ?? res.data ?? [];
+  };
 
-        createGame: (payload: CreateGameshowPayload) =>
-            exec(() => GameshowQuizAPI.create(payload)),
+  const getDetail = async (id: string) => {
+    const res = await exec(() => GameshowQuizAPI.getDetail(id));
+    return res.data?.data ?? res.data;
+  };
 
-        listGames: () =>
-            exec(() => GameshowQuizAPI.list()),
+  const playGame = async (id: string) => {
+    const res = await exec(() => GameshowQuizAPI.play(id));
+    return res.data?.data ?? res.data;
+  };
 
-        getDetail: (id: string) =>
-            exec(() => GameshowQuizAPI.getDetail(id)),
+  const createGame = async (payload: CreateGameshowPayload) => {
+    const res = await exec(() => GameshowQuizAPI.create(payload));
+    return res.data?.data ?? res.data;
+  };
 
-        playGame: (id: string) =>
-            exec(() => GameshowQuizAPI.play(id)),
+  const updateGame = async (id: string, payload: CreateGameshowPayload) => {
+    const res = await exec(() => GameshowQuizAPI.update(id, payload));
+    return res.data?.data ?? res.data;
+  };
 
-        previewGame: (id: string) =>
-            exec(() => GameshowQuizAPI.preview(id)),
+  const previewGame = async (id: string) => {
+    const res = await exec(() => GameshowQuizAPI.preview(id));
+    return res.data?.data ?? res.data;
+  };
 
-        checkAnswer: (gameId: string, payload: CheckAnswerPayload) =>
-            exec(() => GameshowQuizAPI.checkAnswer(gameId, payload)),
-    };
+  const checkAnswer = async (gameId: string, payload: CheckAnswerPayload) => {
+    const res = await exec(() => GameshowQuizAPI.checkAnswer(gameId, payload));
+    return res.data?.data ?? res.data;
+  };
+
+  return {
+    loading,
+    error,
+    createGame,
+    updateGame,
+    listGames,
+    getAllGames: listGames,
+    getDetail,
+    getGameDetail: getDetail,
+    playGame,
+    playGamePublic: playGame,
+    previewGame,
+    checkAnswer,
+  };
 };
