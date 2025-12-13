@@ -76,20 +76,17 @@ function App() {
           element={<EditSpeedSorting />}
         />
 
-        {/* Anagram */}
         <Route path="/create-anagram" element={<CreateAnagram />} />
         <Route path="/anagram/edit/:id" element={<EditAnagram />} />
 
-        {/* Pair or No Pair */}
         <Route
           path="/create-pair-or-no-pair"
           element={<CreatePairOrNoPair />}
         />
 
-        {/* Gameshow Quiz ✅ */}
         <Route path="/gameshow-quiz" element={<GameshowQuizPage />} />
         <Route
-          path="/gameshow-quiz/create"
+          path="/create-gameshow-quiz"
           element={<CreateGameshowPage />}
         />
         <Route
