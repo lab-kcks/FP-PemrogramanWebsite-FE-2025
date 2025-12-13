@@ -36,6 +36,8 @@ import WhackAMoleGame from "./pages/whack-a-mole";
 import CreateWhackAMole from "./pages/whack-a-mole/create";
 import EditWhackAMole from "./pages/whack-a-mole/edit";
 
+import WatchAndMemorizeGame from "./pages/watch-and-memorize/play";
+
 function App() {
   return (
     <>
@@ -49,6 +51,7 @@ function App() {
         <Route path="/maze-chase/play/:id" element={<MazeChase />} />
         <Route path="/speed-sorting/play/:id" element={<SpeedSorting />} />
         <Route path="/anagram/play/:id" element={<PlayAnagram />} />
+
         <Route
           path="/pair-or-no-pair/play/:gameId"
           element={<PairOrNoPairGame />}
@@ -57,6 +60,12 @@ function App() {
         <Route
           path="/sliding-puzzle/play/:id"
           element={<PlaySlidingPuzzle />}
+        />
+
+        {/* ⭐️ ADD WATCH & MEMORIZE ROUTE */}
+        <Route
+          path="/watch-and-memorize/play/:projectId"
+          element={<WatchAndMemorizeGame />}
         />
 
         <Route element={<ProtectedRoute />}>
