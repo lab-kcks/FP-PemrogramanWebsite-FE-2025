@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 45 100% 96%;
+    --foreground: 250 30% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 250 30% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 250 30% 20%;
+
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 187 92% 45%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 45 40% 90%;
+    --muted-foreground: 250 15% 45%;
+
+    --accent: 28 100% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 250 20% 85%;
+    --input: 250 20% 85%;
+    --ring: 262 83% 58%;
+
+    --radius: 1rem;
+
+    /* Custom game colors */
+    --game-pink: 330 85% 60%;
+    --game-green: 145 70% 45%;
+    --game-yellow: 45 100% 55%;
+    --game-blue: 210 100% 55%;
+    --game-coral: 15 90% 65%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 45 40% 92%;
+    --sidebar-accent-foreground: 250 30% 20%;
+    --sidebar-border: 250 20% 90%;
+    --sidebar-ring: 262 83% 58%;
+  }
+
+  .dark {
+    --background: 250 30% 12%;
+    --foreground: 45 50% 95%;
+
+    --card: 250 25% 18%;
+    --card-foreground: 45 50% 95%;
+
+    --popover: 250 25% 18%;
+    --popover-foreground: 45 50% 95%;
+
+    --primary: 262 83% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 187 80% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 250 20% 25%;
+    --muted-foreground: 45 30% 70%;
+
+    --accent: 28 100% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 250 20% 30%;
+    --input: 250 20% 30%;
+    --ring: 262 83% 65%;
+
+    --game-pink: 330 85% 65%;
+    --game-green: 145 70% 50%;
+    --game-yellow: 45 100% 60%;
+    --game-blue: 210 100% 60%;
+    --game-coral: 15 90% 70%;
+
+    --sidebar-background: 250 30% 10%;
+    --sidebar-foreground: 45 50% 95%;
+    --sidebar-primary: 262 83% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 250 20% 22%;
+    --sidebar-accent-foreground: 45 50% 95%;
+    --sidebar-border: 250 20% 25%;
+    --sidebar-ring: 262 83% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .gradient-game {
+    background: linear-gradient(135deg, 
+      hsl(var(--primary)) 0%, 
+      hsl(var(--game-pink)) 25%, 
+      hsl(var(--accent)) 50%, 
+      hsl(var(--game-yellow)) 75%, 
+      hsl(var(--secondary)) 100%
+    );
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .animate-bounce-slow {
+    animation: bounce 2s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
