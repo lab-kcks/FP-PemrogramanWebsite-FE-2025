@@ -15,30 +15,47 @@ export interface GameshowQuestion {
 
 export interface GameshowGameData {
   id: string;
-  title: string;
+  name?: string;
+  title?: string;
   description?: string;
   thumbnail?: string;
   questions: GameshowQuestion[];
+  creator_id?: string;
+  creator_name?: string;
+  is_published?: boolean;
+}
+
+export interface GameListItem {
+  id: string;
+  name?: string;
+  title?: string;
+  description?: string;
+  creator_id?: string;
+  creator_name?: string;
+  is_published?: boolean;
+  total_played?: number;
+  total_liked?: number;
 }
 
 export interface CreateGameshowPayload {
-  name: string;
+  title: string;
   description?: string;
-  score_per_question: number;
-  countdown: number;
-  is_question_randomized: boolean;
-  is_answer_randomized: boolean;
-  questions: {
-    id: string;
-    text: string;
-    timeLimit: number;
-    points: number;
-    options: {
+  thumbnail?: string;
+  gameData: {
+    questions: {
       id: string;
       text: string;
-      isCorrect: boolean;
+      imageUrl?: string;
+      timeLimit: number;
+      points: number;
+      options: {
+        id: string;
+        text: string;
+        isCorrect: boolean;
+      }[];
     }[];
-  }[];
+    randomizeQuestions: boolean;
+  };
 }
 
 export interface CheckAnswerPayload {

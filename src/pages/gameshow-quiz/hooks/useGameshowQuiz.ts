@@ -61,11 +61,17 @@ export const useGameshowQuiz = () => {
     return res.data?.data ?? res.data;
   };
 
+  const deleteGame = async (id: string) => {
+    const res = await exec(() => GameshowQuizAPI.delete(id));
+    return res.data?.data ?? res.data;
+  };
+
   return {
     loading,
     error,
     createGame,
     updateGame,
+    deleteGame,
     listGames,
     getAllGames: listGames,
     getDetail,

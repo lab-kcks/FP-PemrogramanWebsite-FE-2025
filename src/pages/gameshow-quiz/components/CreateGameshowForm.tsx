@@ -5,7 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Typography } from "@/components/ui/typography";
-import { Plus, Save, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Plus, Save, Loader2, Eye, CheckCircle } from "lucide-react";
 import QuestionEditor from "./QuestionEditor";
 import { useGameshowQuiz } from "../hooks/useGameshowQuiz";
 import type { GameshowQuestion } from "@/api/gameshow-quiz/types";
@@ -34,6 +40,8 @@ const CreateGameshowForm = ({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [questions, setQuestions] = useState<GameshowQuestion[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState(0);
 
   useEffect(() => {
     if (initialData) {
@@ -44,10 +52,6 @@ const CreateGameshowForm = ({
   }, [initialData]);
 
   const addQuestion = () => {
-    if (questions.length >= 10) {
-      toast.error("Maksimal 10 soal!");
-      return;
-    }
     setQuestions((prev) => [
       ...prev,
       {
@@ -64,13 +68,31 @@ const CreateGameshowForm = ({
     setQuestions((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const openPreview = () => {
+    if (questions.length === 0) {
+      toast.error("Tambahkan minimal 1 soal untuk preview!");
+      return;
+    }
+    setPreviewIndex(0);
+    setPreviewOpen(true);
+  };
+
+  const optionColors = [
+    "bg-red-500 hover:bg-red-600",
+    "bg-blue-500 hover:bg-blue-600",
+    "bg-yellow-500 hover:bg-yellow-600",
+    "bg-green-500 hover:bg-green-600",
+  ];
+
+  const optionLabels = ["A", "B", "C", "D"];
+
   const submit = async () => {
     if (!name.trim()) {
       toast.error("Nama game harus diisi!");
       return;
     }
-    if (questions.length !== 10) {
-      toast.error(`Harus ada 10 soal! (saat ini: ${questions.length})`);
+    if (questions.length === 0) {
+      toast.error("Harus ada minimal 1 soal!");
       return;
     }
 
@@ -94,13 +116,24 @@ const CreateGameshowForm = ({
 
     try {
       const payload = {
-        name,
+        title: name,
         description,
-        score_per_question: 10,
-        countdown: 30,
-        is_question_randomized: false,
-        is_answer_randomized: false,
-        questions,
+        thumbnail: "",
+        gameData: {
+          questions: questions.map((q) => ({
+            id: q.id,
+            text: q.text,
+            imageUrl: q.imageUrl,
+            timeLimit: q.timeLimit || 30,
+            points: q.points || 1000,
+            options: q.options.map((o) => ({
+              id: o.id,
+              text: o.text,
+              isCorrect: o.isCorrect || false,
+            })),
+          })),
+          randomizeQuestions: false,
+        },
       };
 
       if (gameId) {
@@ -151,14 +184,9 @@ const CreateGameshowForm = ({
       {/* Questions Section */}
       <div className="flex items-center justify-between">
         <Typography className="font-semibold">
-          Daftar Soal ({questions.length}/10)
+          Daftar Soal ({questions.length})
         </Typography>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={addQuestion}
-          disabled={questions.length >= 10}
-        >
+        <Button variant="outline" size="sm" onClick={addQuestion}>
           <Plus className="w-4 h-4 mr-1" />
           Tambah Soal
         </Button>
@@ -167,7 +195,7 @@ const CreateGameshowForm = ({
       {questions.length === 0 ? (
         <Card className="p-8 text-center">
           <Typography className="text-slate-500 mb-4">
-            Belum ada soal. Tambahkan 10 soal untuk melanjutkan.
+            Belum ada soal. Tambahkan minimal 1 soal untuk melanjutkan.
           </Typography>
           <Button onClick={addQuestion}>
             <Plus className="w-4 h-4 mr-2" />
@@ -193,10 +221,19 @@ const CreateGameshowForm = ({
       )}
 
       {/* Submit Button */}
-      <div className="flex justify-end pt-4 border-t">
+      <div className="flex justify-end gap-3 pt-4 border-t">
+        <Button
+          variant="outline"
+          onClick={openPreview}
+          disabled={loading || questions.length === 0}
+          className="min-w-[120px]"
+        >
+          <Eye className="w-4 h-4 mr-2" />
+          Preview
+        </Button>
         <Button
           onClick={submit}
-          disabled={loading || questions.length !== 10}
+          disabled={loading || questions.length === 0}
           className="bg-blue-600 hover:bg-blue-700 min-w-[150px]"
         >
           {loading ? (
@@ -212,6 +249,111 @@ const CreateGameshowForm = ({
           )}
         </Button>
       </div>
+
+      {/* Preview Modal */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-4 border-b bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+            <DialogTitle className="text-white">
+              Preview: {name || "Untitled Game"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {questions.length > 0 && (
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* Progress */}
+              <div className="px-4 py-2 bg-slate-100">
+                <div className="flex items-center justify-between text-sm text-slate-600 mb-2">
+                  <span>
+                    Soal {previewIndex + 1} dari {questions.length}
+                  </span>
+                  <span className="font-medium">10 poin</span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all"
+                    style={{
+                      width: `${((previewIndex + 1) / questions.length) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Question */}
+              <div className="flex-1 p-6 overflow-auto">
+                <div className="bg-white rounded-xl p-6 shadow-sm border mb-6">
+                  <Typography className="text-xl font-semibold text-center text-slate-800">
+                    {questions[previewIndex]?.text || "(Belum ada pertanyaan)"}
+                  </Typography>
+                </div>
+
+                {/* Options */}
+                <div className="grid grid-cols-2 gap-4">
+                  {questions[previewIndex]?.options.map((option, idx) => (
+                    <div
+                      key={option.id || idx}
+                      className={`${optionColors[idx % 4]} p-4 rounded-xl text-white relative transition-all cursor-default`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg shrink-0">
+                          {optionLabels[idx]}
+                        </span>
+                        <span className="text-lg font-medium pt-0.5">
+                          {option.text || "(Kosong)"}
+                        </span>
+                      </div>
+                      {option.isCorrect && (
+                        <CheckCircle className="absolute top-2 right-2 w-6 h-6 text-white/80" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {questions[previewIndex]?.options.length === 0 && (
+                  <div className="text-center text-slate-400 py-8">
+                    (Belum ada pilihan jawaban)
+                  </div>
+                )}
+              </div>
+
+              {/* Navigation */}
+              <div className="p-4 border-t bg-white flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  onClick={() => setPreviewIndex((i) => Math.max(0, i - 1))}
+                  disabled={previewIndex === 0}
+                >
+                  Sebelumnya
+                </Button>
+                <div className="flex gap-1">
+                  {questions.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setPreviewIndex(idx)}
+                      className={`w-3 h-3 rounded-full transition-all ${
+                        idx === previewIndex
+                          ? "bg-blue-600"
+                          : "bg-slate-300 hover:bg-slate-400"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setPreviewIndex((i) =>
+                      Math.min(questions.length - 1, i + 1),
+                    )
+                  }
+                  disabled={previewIndex === questions.length - 1}
+                >
+                  Selanjutnya
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
