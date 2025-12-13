@@ -39,38 +39,35 @@ body {
 
 #status {
 	background-color: #242424;
-	display: none !important;
+	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	visibility: hidden !important;
+	visibility: hidden;
 }
 
 #status-splash {
 	max-height: 100%;
 	max-width: 100%;
 	margin: auto;
-	display: none !important;
 }
 
 #status-splash.show-image--false {
-	display: none !important;
+	display: none;
 }
 
 #status-splash.fullsize--true {
 	height: 100%;
 	width: 100%;
 	object-fit: contain;
-	display: none !important;
 }
 
 #status-splash.use-filter--false {
 	image-rendering: pixelated;
-	display: none !important;
 }
 
 #status-progress, #status-notice {
-	display: none !important;
+	display: none;
 }
 
 #status-progress {
@@ -114,7 +111,7 @@ body {
 
 		<script src="FP-Pemweb.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"FP-Pemweb","experimentalVK":false,"fileSizes":{"FP-Pemweb.pck":15917088,"FP-Pemweb.wasm":36145869},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"FP-Pemweb","experimentalVK":false,"fileSizes":{"FP-Pemweb.pck":15918208,"FP-Pemweb.wasm":36145869},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
@@ -135,8 +132,10 @@ const engine = new Engine(GODOT_CONFIG);
 			initializing = false;
 			return;
 		}
-		// Skip showing loading screen
-		return;
+		statusOverlay.style.visibility = 'visible';
+		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+		statusMode = mode;
 	}
 
 	function setStatusNotice(text) {
@@ -199,8 +198,18 @@ const engine = new Engine(GODOT_CONFIG);
 			displayFailureNotice(missingMsg + missing.join('\n'));
 		}
 	} else {
-		// Skip loading screen, start game directly
-		engine.startGame({}).then(() => {
+		setStatusMode('progress');
+		engine.startGame({
+			'onProgress': function (current, total) {
+				if (current > 0 && total > 0) {
+					statusProgress.value = current;
+					statusProgress.max = total;
+				} else {
+					statusProgress.removeAttribute('value');
+					statusProgress.removeAttribute('max');
+				}
+			},
+		}).then(() => {
 			setStatusMode('hidden');
 		}, displayFailureNotice);
 	}
